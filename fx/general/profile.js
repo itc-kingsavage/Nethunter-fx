@@ -204,3 +204,118 @@ function formatProfile(profile, stats, activity, rank, isSelf, detailed) {
     formatted += `📈 *Need:* ${rank.neededForNext} more XP\n`;
   }
   
+  formatted += `\n📊 *Statistics*\n`;
+  formatted += `✉️ Messages: ${stats.messagesSent}\n`;
+  formatted += `⚡ Commands: ${stats.commandsUsed}\n`;
+  formatted += `📎 Media: ${stats.mediaShared}\n`;
+  formatted += `📅 Active Days: ${stats.activeDays}\n`;
+  formatted += `📆 Joined: ${joinDate}\n`;
+  
+  formatted += `\n📈 *Activity*\n`;
+  formatted += `📅 Today: ${activity.today} messages\n`;
+  formatted += `📅 This Week: ${activity.thisWeek} messages\n`;
+  formatted += `🕒 Peak Hour: ${activity.peakActivityHour}:00\n`;
+  
+  if (profile.badges && profile.badges.length > 0) {
+    formatted += `\n🎖️ *Badges:* ${profile.badges.join(' | ')}\n`;
+  }
+  
+  if (profile.bio && profile.bio !== 'No bio set') {
+    formatted += `\n💬 *Bio:* ${profile.bio}\n`;
+  }
+  
+  if (detailed) {
+    formatted += `\n📋 *Detailed Stats*\n`;
+    formatted += `📅 Avg/Day: ${stats.avgMessagesPerDay}\n`;
+    formatted += `🔗 Command Ratio: ${stats.commandRatio}\n`;
+    formatted += `⏰ Active Hours: ${activity.activeHours}/24\n`;
+    
+    if (activity.lastMessage) {
+      const lastMsgTime = new Date(activity.lastMessage);
+      const timeDiff = Math.floor((new Date() - lastMsgTime) / (1000 * 60)); // minutes
+      formatted += `🕒 Last Active: ${timeDiff} minutes ago\n`;
+    }
+  }
+  
+  formatted += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+  formatted += `🆔 User ID: ${profile.userId.substring(0, 12)}...\n`;
+  
+  if (isSelf) {
+    formatted += `\n💡 *Tip:* Use !save to save important messages!`;
+  }
+  
+  return formatted;
+}
+
+// Helper functions for updating user data (call these from your main bot)
+profileFunction.recordMessage = function(userId, messageData) {
+  // Initialize if needed
+  if (!userActivity.has(userId)) {
+    userActivity.set(userId, {
+      messagesSent: 0,
+      commandsUsed: 0,
+      mediaShared: 0,
+      groupsJoined: 0,
+      activeDays: 1,
+      lastActive: new Date().toISOString()
+    });
+  }
+  
+  if (!messageHistory.has(userId)) {
+    messageHistory.set(userId, []);
+  }
+  
+  // Update activity
+  const activity = userActivity.get(userId);
+  activity.messagesSent += 1;
+  activity.lastActive = new Date().toISOString();
+  
+  // Check if new day
+  const lastActiveDate = new Date(activity.lastActive);
+  const now = new Date();
+  if (lastActiveDate.toDateString() !== now.toDateString()) {
+    activity.activeDays += 1;
+  }
+  
+  // Check for media
+  if (messageData.hasMedia) {
+    activity.mediaShared += 1;
+  }
+  
+  // Record message
+  messageHistory.get(userId).push({
+    ...messageData,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Keep only last 1000 messages per user
+  const userMessages = messageHistory.get(userId);
+  if (userMessages.length > 1000) {
+    messageHistory.set(userId, userMessages.slice(-1000));
+  }
+};
+
+profileFunction.recordCommand = function(userId) {
+  if (!userActivity.has(userId)) {
+    userActivity.set(userId, {
+      messagesSent: 0,
+      commandsUsed: 0,
+      mediaShared: 0,
+      groupsJoined: 0,
+      activeDays: 1,
+      lastActive: new Date().toISOString()
+    });
+  }
+  
+  const activity = userActivity.get(userId);
+  activity.commandsUsed += 1;
+};
+
+profileFunction.updateProfile = function(userId, updates) {
+  const profile = getUserProfile(userId);
+  Object.assign(profile, updates);
+  userProfiles.set(userId, profile);
+  return profile;
+};
+
+module.exports = profileFunction;
