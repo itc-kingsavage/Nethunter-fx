@@ -13,7 +13,7 @@ const fs = require('fs').promises;
 dotenv.config();
 
 // Import response builder
-const { createErrorResponse, createSuccessResponse } = require('./lib/response.js');
+const { createErrorResponse, createSuccessResponse } = require('./lib/response');
 
 // Initialize Express app
 const app = express();
