@@ -1,0 +1,36 @@
+# render.yaml
+services:
+  - type: web
+    name: nethunter-fx
+    env: node
+    region: oregon  # or: frankfurt, singapore, ohio, etc.
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+    disk:
+      name: nethunter-temp
+      mountPath: /opt/render/project/src/temp
+      sizeGB: 1
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 70
+      targetCPUPercent: 70
